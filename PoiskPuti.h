@@ -9,17 +9,24 @@ class PoiskPuti{
 	struct Point{
 		int x, y;
 	};
-	struct PointPoisk{
+	struct PointAim{
+		int x, y;
+		bool being;
+	};
+	struct pointSearch{
 		int num;
 		int x, y;
 		float H, F, G=0;
 		bool visited=false;
 		Point parent;
 	};
+	int xPanzer, yPanzer;
 	vector<Point> barier;//маасив в котором хран€тс€ преп€тстви€
+	vector<Point> barierMove;// массив перемешающихс€ преп€тствий
+	vector<PointAim> pointsAim;//массив точек цели пути
 	Point finish,start;// точки старта и финиша
-	vector<PointPoisk> open;// список с открытыми клетками
-	vector<PointPoisk> close;// список с закрытыми клетками, тоесть посешенными
+	vector<pointSearch> open;// список с открытыми клетками
+	vector<pointSearch> close;// список с закрытыми клетками, тоесть посешенными
 	vector<PointRoute> route;// маршрут
 	bool beingRoute;// найден ли маршрут
 	float addG;// добавлеи€ при расчете фактически затраченного расто€ни€ при поиске пути
@@ -36,7 +43,53 @@ public:
 			barier.push_back(oneBarier);
 		}
 	}
-	
+
+	void updateXYPanzer(int x, int y)
+	{
+		xPanzer = x; 
+		yPanzer = y;
+	}
+	void updateBarierMove()// обновить массив перемешаюшихс€ преп€тсвий
+	{
+		barierMove.clear();
+		for (int i = 0; i < panzersData.size(); i++)
+		{
+		//	if (start.x / stens.size != (panzersData[i].x) / stens.size
+		//		|| start.y / stens.size != (panzersData[i].y) / stens.size)
+			{
+				Point oneBarier;
+				if ((xPanzer / stens.size == (panzersData[i].x) / stens.size
+					&& yPanzer / stens.size == (panzersData[i].y) / stens.size) == false)
+				{
+					oneBarier.x = (panzersData[i].x) / stens.size;
+					oneBarier.y = (panzersData[i].y) / stens.size;
+					barierMove.push_back(oneBarier);
+				}
+				if (((xPanzer + panzersData[i].sizeX) / stens.size == (panzersData[i].x + panzersData[i].sizeX) / stens.size
+					&& yPanzer / stens.size == (panzersData[i].y) / stens.size) == false)
+				{
+					oneBarier.x = (panzersData[i].x + panzersData[i].sizeX) / stens.size;
+					oneBarier.y = (panzersData[i].y) / stens.size;
+					barierMove.push_back(oneBarier);
+				}
+				if ((xPanzer / stens.size == (panzersData[i].x) / stens.size
+					&& (yPanzer + panzersData[i].sizeY) / stens.size == (panzersData[i].y + panzersData[i].sizeY) / stens.size) == false)
+				{
+					oneBarier.x = (panzersData[i].x) / stens.size;
+					oneBarier.y = (panzersData[i].y + panzersData[i].sizeY) / stens.size;
+					barierMove.push_back(oneBarier);
+				}
+				if (((xPanzer + panzersData[i].sizeX) / stens.size == (panzersData[i].x + panzersData[i].sizeX) / stens.size
+					&& (yPanzer + panzersData[i].sizeY) / stens.size == (panzersData[i].y + panzersData[i].sizeY) / stens.size) == false)
+				{
+					oneBarier.x = (panzersData[i].x + panzersData[i].sizeX) / stens.size;
+					oneBarier.y = (panzersData[i].y + panzersData[i].sizeY) / stens.size;
+					barierMove.push_back(oneBarier);
+				}
+			}
+		}
+	}
+
 	void DrawRoute(RenderWindow &window, Text text)// нарисовать маршрут 
 	{
 		RectangleShape rectangle(sf::Vector2f(3, 3));
@@ -91,6 +144,23 @@ public:
 				window.draw(rectangle);
 			}
 		}
+		for (int i = 0; i < barierMove.size(); i++)// выводим пр€питстви€ move
+		{
+			{
+				rectangle.setFillColor(Color(155, 125, 225));
+				rectangle.setPosition(barierMove[i].x*stens.size + 15, barierMove[i].y*stens.size + 15);
+				window.draw(rectangle);
+			}
+		}
+		for (int i = 0; i < pointsAim.size(); i++)// выводим пр€питстви€ move
+		{
+			{
+				rectangle.setFillColor(Color(0, 125, 225));
+				rectangle.setPosition(pointsAim[i].x*stens.size + 15, pointsAim[i].y*stens.size + 15);
+				DrawNumTxt(pointsAim[i].x*stens.size, pointsAim[i].y*stens.size + 10, i, window, text);
+				window.draw(rectangle);
+			}
+		}
 		DrawRoute(window, text);// выведем маршрут
 		//выведем точку старта
 		rectangle.setFillColor(Color(0, 255, 255));
@@ -112,7 +182,7 @@ public:
 
 	}
 
-	float Raschet_H(PointPoisk point, Point finishPoint)// функци€ расчета предположительного расто€ни€ до финиша
+	float Raschet_H(pointSearch point, Point finishPoint)// функци€ расчета предположительного расто€ни€ до финиша
 	{
 		float dx, dy;
 		dx = finishPoint.x - point.x;
@@ -126,6 +196,10 @@ public:
 		for (int i = 0; i < barier.size(); i++)
 		{
 			if (x == barier[i].x && y == barier[i].y) return  true;
+		}
+		for (int i = 0; i < barierMove.size(); i++)
+		{
+			if (x == barierMove[i].x && y == barierMove[i].y) return  true;
 		}
 		return false;
 	}
@@ -161,9 +235,70 @@ public:
 		}
 		return -1;
 	}
-	void RaschetInStep(int dx,int dy,PointPoisk actual)// функци€ расчета шага при построинии волны поиска пути
+	bool IsPointAim(int x, int y)// если х у это клетка уже точка цели поиска
 	{
-		PointPoisk point;
+		for (int i = 0; i < pointsAim.size(); i++)
+		{
+			if (x == pointsAim[i].x && y == pointsAim[i].y) return  true;
+		}
+		return false;
+	}
+	void RashetPointAim(int aimX, int aimY, int countPoint)// расчитать точки цели при нажатиии двигатьс€ группе юнитов
+	{
+		PointAim actual;
+		pointsAim.clear();
+		actual.x = aimX;
+		actual.y = aimY;
+		pointsAim.push_back(actual);
+		//
+		int i = 0;
+		do
+		{
+			
+				if (IsBarier(pointsAim[i].x - 1, pointsAim[i].y) == false
+					&& IsPointAim(pointsAim[i].x - 1, pointsAim[i].y) == false && pointsAim[i].x - 1>=0)
+				{
+					actual.x = pointsAim[i].x - 1;
+					actual.y = pointsAim[i].y;
+					pointsAim.push_back(actual);
+					if (pointsAim.size() == countPoint) break;
+					//	continue;
+				}
+				if (IsBarier(pointsAim[i].x + 1, pointsAim[i].y) == false
+					&& IsPointAim(pointsAim[i].x + 1, pointsAim[i].y) == false && pointsAim[i].x + 1 <= map_Size_X)
+				{
+					actual.x = pointsAim[i].x + 1;
+					actual.y = pointsAim[i].y;
+					pointsAim.push_back(actual);
+					if (pointsAim.size() == countPoint ) break;
+					//continue;
+				}
+				if (IsBarier(pointsAim[i].x, pointsAim[i].y - 1) == false
+					&& IsPointAim(pointsAim[i].x, pointsAim[i].y - 1) == false && pointsAim[i].y - 1 >= 0)
+				{
+					actual.x = pointsAim[i].x;
+					actual.y = pointsAim[i].y - 1;
+					pointsAim.push_back(actual);
+					if (pointsAim.size() == countPoint ) break;
+					//	continue;
+				}
+				if (IsBarier(pointsAim[i].x, pointsAim[i].y + 1) == false
+					&& IsPointAim(pointsAim[i].x, pointsAim[i].y + 1) == false && pointsAim[i].y + 1 <= map_Size_Y)
+				{
+					actual.x = pointsAim[i].x;
+					actual.y = pointsAim[i].y + 1;
+					pointsAim.push_back(actual);
+					if (pointsAim.size() == countPoint ) break;
+					//	continue;
+				}
+				i++;
+				
+		} while (pointsAim.size() < countPoint);
+
+	}
+	void RaschetInStep(int dx,int dy,pointSearch actual)// функци€ расчета шага при построинии волны поиска пути
+	{
+		pointSearch point;
 		// присвоим point просматриваюмую клетку 
 		point.x = actual.x+dx;
 		point.y = actual.y +dy;
@@ -202,7 +337,7 @@ public:
 		close.clear();
 		beingRoute = false;
 		RectangleShape rectangle(sf::Vector2f(10, 10));
-		PointPoisk	point, 
+		pointSearch	point, 
 					actual;// клетка которую сейчас расматриваем от нее смотрим по сторонам
 		
 		point.x = startX / stens.size;// присваеваем поинт точку старта
@@ -287,7 +422,7 @@ public:
 			}
 		} while (open.size()>0 && !beingRoute);// выходим из цикла если прсмотрели все доступные клетки или маршрут найден
 	}
-	//void InStepCreateRoute(PointPoisk &pointRoute, int it)
+	//void InStepCreateRoute(pointSearch &pointRoute, int it)
 	//{
 	//	PointRoute rouPo;
 	//	rouPo.x = pointRoute.x;
@@ -296,7 +431,7 @@ public:
 	//	pointRoute.x = close[it].parent.x;
 	//	pointRoute.y = close[it].parent.y;
 	//}
-	void InStepCreateRoute(PointPoisk &pointRoute, int it)// функци€ расчета шага при построении маршрута
+	void InStepCreateRoute(pointSearch &pointRoute, int it)// функци€ расчета шага при построении маршрута
 	{
 		PointRoute rouPo;
 		rouPo.x = pointRoute.x;
@@ -308,7 +443,7 @@ public:
 	vector<PointRoute> CreateRoute(RenderWindow &window, Text &text)
 	{
 		RectangleShape rectangle(sf::Vector2f(3, 3));
-		PointPoisk pointRoute;// текуша€ точка пути
+		pointSearch pointRoute;// текуша€ точка пути
 		PointRoute rouPo;
 		route.clear();//очишаем маршрут
 		if (beingRoute)// если маршрут найден 

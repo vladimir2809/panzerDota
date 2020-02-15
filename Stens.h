@@ -31,13 +31,13 @@ public:
 		stensTexture.loadFromImage(stensImage);//передаем в него объект Image (изображения)
 		stensSprite.setTexture(stensTexture);
 		stensSprite.setTextureRect(IntRect(1, 1, 40, 40));
-		srand(1);
+		srand(3);
 		for (int i = 0; i<kolvoStens; i++)
 		{
 			int rx = rand() % map_Size_X;
 			int ry = rand() % map_Size_Y - 1;
-			stena[i].x = rx * 40;
-			stena[i].y = ry * 40;
+			stena[i].x = rx * size;
+			stena[i].y = ry * size;
 			if (i>kolvoStens / 5 * 2) stena[i].tip = VODA; else stena[i].tip = STENA;
 		}
 
@@ -64,6 +64,14 @@ public:
 			if (stena[i].tip == STENA) stensSprite.setTextureRect(IntRect(1, 1, 40, 40));
 			stensSprite.setPosition(stena[i].x, stena[i].y);
 			window.draw(stensSprite);
+		}
+		for (int i = 0; i < map_Size_X; i++)
+		{
+			DrawLine(window, i*size + size / 2, 0, i*size + size / 2, 600, Color::Red);
+		}
+		for (int i = 0; i < map_Size_Y; i++)
+		{
+			DrawLine(window, 0,i*size + size / 2,800, i*size + size / 2,  Color::Red);
 		}
 	}
 	int InStens(int x, int y, int dx = -1, int dy = -1, bool baruer = false)// процедура проверки нахожжденя в стене

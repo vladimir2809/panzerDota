@@ -2,13 +2,23 @@
 #include <vector>
 #include <sstream>
 #include <iostream>
+#include <algorithm>
 using namespace sf;
+using namespace std;
 struct PointRoute{
 		int x, y;
 	};
+struct PanzerData{
+	int x, y, sizeY, sizeX; 
+	float dx, dy;
+	bool moving;
+	int imEndRoute;
+	bool inMeCollisionPanzer;
+	int inMeNumCollisionpanzer;
+};
+vector<PanzerData> panzersData;
 const double  pi = 3.1415926;
-
-const int kolvoStens = 130;
+const int kolvoStens = 3;
 int const map_Size_X = 20;
 int const map_Size_Y = 14;
 void DrawLine (RenderWindow &window, int x, int y, int x1, int y1, Color color)// процедура рисования линии
@@ -130,11 +140,18 @@ Vector2f BiasRotate(double pointRotateX, double pointRotateY, double angle)// см
 	bias.y = dy;
 	return bias;
 }
-void DrawNumTxt(int x, int y, int mesNum, RenderWindow &window, Text &text){
-	text.setColor(Color(255, 255, 255));//покрасили текст в красный. если убрать эту строку, то по умолчанию он белый
+void DrawNumTxt(int x, int y, int mesNum, RenderWindow &window, Text &text,Color color=Color(255,255,255)){
+	text.setColor(color);
 	std::ostringstream numStr;    // объявили переменную
 	numStr << trunc(mesNum);
 	text.setString(numStr.str());
+	text.setPosition(x, y);
+	window.draw(text);
+}
+void DrawTxt(int x, int y,char message[150], RenderWindow &window, Text &text, Color color = Color(255, 255, 255))
+{
+	text.setColor(color);
+	text.setString(message);
 	text.setPosition(x, y);
 	window.draw(text);
 }
